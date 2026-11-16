@@ -1,7 +1,7 @@
 // Único lugar do front que conversa com o servidor.
 // Em desenvolvimento, o Vite encaminha /api para http://localhost:3000 (ver vite.config.js).
 
-const BASE = '/api';
+const BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 const CHAVE_TOKEN = 'barbearia.token';
 
 // O token fica no localStorage para o login sobreviver a recarregar a página.

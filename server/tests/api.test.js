@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import { criarApp } from '../src/app.js';
+import handlerVercel, { criarApp } from '../src/app.js';
 import { criarRepositorios } from '../src/repository/index.js';
 import { servicosPadrao } from '../src/config/padrao.js';
 import { criarUsuario } from '../src/usuarios.js';
@@ -93,6 +93,25 @@ describe('segurança: autenticação', () => {
 
 describe('segurança: login', () => {
   beforeEach(() => preparar());
+
+  it('autentica a conta pública de portfólio no handler da Vercel', async () => {
+    const segredoOriginal = process.env.JWT_SECRET;
+    process.env.JWT_SECRET = SEGREDO;
+
+    try {
+      const r = await request(handlerVercel).post('/auth/login').send({
+        email: 'barbeiro@exemplo.com',
+        senha: 'barbeiro123',
+      });
+
+      expect(r.status).toBe(200);
+      expect(r.body.usuario.email).toBe('barbeiro@exemplo.com');
+      expect(r.body.token).toBeTruthy();
+    } finally {
+      if (segredoOriginal === undefined) delete process.env.JWT_SECRET;
+      else process.env.JWT_SECRET = segredoOriginal;
+    }
+  });
 
   it('processa cabeçalhos do proxy quando a confiança está configurada', async () => {
     await preparar({ trustProxy: 1 });

@@ -1,8 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import { criarAuth } from './auth.js';
+import { criarAuth, hashSenha } from './auth.js';
 import { criarCasosDeUso } from './casosDeUso/agendamentos.js';
 import { ErroNegocio, tratarErros } from './erros.js';
+import { servicosPadrao } from './config/padrao.js';
 import { agoraSaoPaulo } from './regras/tempo.js';
 import { rotasAuth } from './rotas/auth.js';
 import { rotasClientes } from './rotas/clientes.js';
@@ -57,18 +58,26 @@ export function criarApp({
   return app;
 }
 
-let appVercel;
+let appVercelPromise;
 
-export default function handler(req, res) {
-  if (!appVercel) {
-    const { arquivoDados, segredoJwt, origensCors } = carregarAmbiente();
-    appVercel = criarApp({
-      repos: criarRepositorios({ arquivo: arquivoDados }),
-      segredoJwt,
-      origensCors,
-      trustProxy: 1,
-    });
-  }
+async function criarAppVercel() {
+  const { segredoJwt, origensCors } = carregarAmbiente();
+  const repos = criarRepositorios();
 
+  await repos.usuarios.criar({
+    id: 'portfolio-barbeiro',
+    nome: 'Barbeiro',
+    email: 'barbeiro@exemplo.com',
+    senhaHash: await hashSenha('barbeiro123'),
+  });
+
+  for (const servico of servicosPadrao) await repos.servicos.criar(servico);
+
+  return criarApp({ repos, segredoJwt, origensCors, trustProxy: 1 });
+}
+
+export default async function handler(req, res) {
+  appVercelPromise ??= criarAppVercel();
+  const appVercel = await appVercelPromise;
   return appVercel(req, res);
 }

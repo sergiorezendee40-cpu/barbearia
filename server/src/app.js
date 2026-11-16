@@ -9,6 +9,8 @@ import { rotasClientes } from './rotas/clientes.js';
 import { rotasServicos } from './rotas/servicos.js';
 import { rotasAgendamentos } from './rotas/agendamentos.js';
 import { rotasConfiguracoes } from './rotas/configuracoes.js';
+import { carregarAmbiente } from './ambiente.js';
+import { criarRepositorios } from './repository/index.js';
 
 /**
  * Monta a API. Tudo que muda entre ambientes entra por parâmetro:
@@ -51,4 +53,19 @@ export function criarApp({
   app.use(tratarErros);
 
   return app;
+}
+
+let appVercel;
+
+export default function handler(req, res) {
+  if (!appVercel) {
+    const { arquivoDados, segredoJwt, origensCors } = carregarAmbiente();
+    appVercel = criarApp({
+      repos: criarRepositorios({ arquivo: arquivoDados }),
+      segredoJwt,
+      origensCors,
+    });
+  }
+
+  return appVercel(req, res);
 }

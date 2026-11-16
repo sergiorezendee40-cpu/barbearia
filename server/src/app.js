@@ -24,12 +24,14 @@ export function criarApp({
   relogio = () => agoraSaoPaulo(),
   limiteLogin,
   origensCors = ['http://localhost:5173'],
+  trustProxy = false,
 }) {
   const app = express();
   const auth = criarAuth({ segredo: segredoJwt });
   const casos = criarCasosDeUso({ repos, relogio });
 
   app.disable('x-powered-by');
+  app.set('trust proxy', trustProxy);
   app.use((_req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'no-store');
@@ -64,6 +66,7 @@ export default function handler(req, res) {
       repos: criarRepositorios({ arquivo: arquivoDados }),
       segredoJwt,
       origensCors,
+      trustProxy: 1,
     });
   }
 

@@ -94,6 +94,17 @@ describe('segurança: autenticação', () => {
 describe('segurança: login', () => {
   beforeEach(() => preparar());
 
+  it('processa cabeçalhos do proxy quando a confiança está configurada', async () => {
+    await preparar({ trustProxy: 1 });
+    const r = await request(app)
+      .post('/auth/login')
+      .set('X-Forwarded-For', '198.51.100.24')
+      .set('Forwarded', 'for=198.51.100.24;proto=https')
+      .send({});
+
+    expect(r.status).toBe(400);
+  });
+
   it('login correto devolve token e usuário, sem expor o hash da senha', async () => {
     const r = await request(app).post('/auth/login').send({ email: 'luciano@teste.com', senha: 'senha-forte-123' });
     expect(r.status).toBe(200);
